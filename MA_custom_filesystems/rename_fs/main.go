@@ -21,6 +21,32 @@ var evaluateMTD = true // If true, creates new csv file every time period (2s, 5
 var initialTimestamp = time.Now().Unix()
 var timeWindow = 5
 
+// signalPipePath is the path to the named pipe (FIFO) shared with the host via a
+// bind-mounted directory. The host-side watcher script reads from this pipe and
+// kills the container upon receiving a signal.
+var signalPipePath = "/signal/kill_signal"
+
+// detectionSignaled ensures we write to the pipe exactly once, preventing
+// repeated signals and avoiding blocking the filesystem on a full pipe buffer.
+var detectionSignaled sync.Once
+
+// signalDetection writes a single byte to the host-facing FIFO to notify the
+// watcher script that malware was detected. The write is non-blocking so the
+// filesystem operation is never stalled if no reader is attached.
+func signalDetection() {
+	detectionSignaled.Do(func() {
+		f, err := os.OpenFile(signalPipePath, os.O_WRONLY|syscall.O_NONBLOCK, 0)
+		if err != nil {
+			log.Printf("detection signal: could not open pipe: %v", err)
+			return
+		}
+		defer f.Close()
+		if _, err := f.Write([]byte("1\n")); err != nil {
+			log.Printf("detection signal: write failed: %v", err)
+		}
+	})
+}
+
 type RenameNode struct {
 	fs.LoopbackNode
 	Name string
@@ -145,7 +171,9 @@ func (f *RenameFile) Read(ctx context.Context, buf []byte, off int64) (res fuse.
 	pid := caller.Pid
 	ext := strings.Split(f.name, ".")[1]
 	if isMalicious() {
-		f.node.Rename(ctx, f.name, f.parentNode, "_"+f.name, 0)
+		signalDetection()
+		// Defensive rename (disabled — container kill is the response):
+		// f.node.Rename(ctx, f.name, f.parentNode, "_"+f.name, 0)
 	}
 
 	dt := time.Now().Unix() - initialTimestamp
