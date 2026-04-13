@@ -6,9 +6,9 @@ import time
 import sklearn
 
 
-LOG_PATH = "../logs/classifier.log"
-MODEL_PATH = "./models/rfClassifier.model"
-CSV_PATH = "../logs/logfile{}.csv"
+LOG_PATH = "/logs/classifier.log"
+MODEL_PATH = "/app/python_classifier/models/rfClassifier.model"
+CSV_PATH = "/logs/logfile{}.csv"
 TIME_WINDOW = 5.0
 clf = pickle.load(open(MODEL_PATH, "rb"))
 

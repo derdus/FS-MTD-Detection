@@ -16,7 +16,7 @@ import (
 )
 
 var MTDType = "rename"
-var logPath = "../logs/logfile%d.csv"
+var logPath = "/logs/logfile%d.csv"
 var evaluateMTD = true // If true, creates new csv file every time period (2s, 5s, 10s). Otherwise, dumps all records into one csv for training purposes
 var initialTimestamp = time.Now().Unix()
 var timeWindow = 5
@@ -222,11 +222,17 @@ func (n *RenameNode) path() string {
 }
 
 func main() {
+	if len(os.Args) < 3 {
+		fmt.Fprintf(os.Stderr, "Usage: %s <backing-path> <mountpoint>\n", os.Args[0])
+		os.Exit(1)
+	}
+	backingPath := os.Args[1]
+	mountPoint := os.Args[2]
+
 	go changeLogFile()
-	mountPoint := "/home/USERNAME_HERE/FTP/" // Change the path to the desired mountpoint
 	rootData := &fs.LoopbackRoot{
 		NewNode: newRenameNode,
-		Path:    "../filesystem_dir",
+		Path:    backingPath,
 	}
 
 	sec := time.Second
