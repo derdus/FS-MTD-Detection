@@ -2,13 +2,19 @@ import numpy as np
 import pickle
 import pandas as pd
 import os
+import sys
 import time
 import sklearn
 
+# Paths can be overridden via CLI args:
+#   detection_system.py [<log-dir> [<model-path>]]
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_log_dir = sys.argv[1] if len(sys.argv) >= 2 else "/logs"
+_model_path = sys.argv[2] if len(sys.argv) >= 3 else os.path.join(_script_dir, "models/rfClassifier.model")
 
-LOG_PATH = "/logs/classifier.log"
-MODEL_PATH = "/app/python_classifier/models/rfClassifier.model"
-CSV_PATH = "/logs/logfile{}.csv"
+LOG_PATH = os.path.join(_log_dir, "classifier.log")
+MODEL_PATH = _model_path
+CSV_PATH = os.path.join(_log_dir, "logfile{}.csv")
 TIME_WINDOW = 5.0
 clf = pickle.load(open(MODEL_PATH, "rb"))
 

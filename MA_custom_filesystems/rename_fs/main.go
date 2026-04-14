@@ -17,6 +17,7 @@ import (
 
 var MTDType = "rename"
 var logPath = "/logs/logfile%d.csv"
+var classifierLogPath = "/logs/classifier.log"
 var evaluateMTD = true // If true, creates new csv file every time period (2s, 5s, 10s). Otherwise, dumps all records into one csv for training purposes
 var initialTimestamp = time.Now().Unix()
 var timeWindow = 5
@@ -223,11 +224,20 @@ func (n *RenameNode) path() string {
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Fprintf(os.Stderr, "Usage: %s <backing-path> <mountpoint>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s <backing-path> <mountpoint> [<log-dir> [<signal-dir>]]\n", os.Args[0])
 		os.Exit(1)
 	}
 	backingPath := os.Args[1]
 	mountPoint := os.Args[2]
+
+	if len(os.Args) >= 4 {
+		logDir := os.Args[3]
+		logPath = logDir + "/logfile%d.csv"
+		classifierLogPath = logDir + "/classifier.log"
+	}
+	if len(os.Args) >= 5 {
+		signalPipePath = os.Args[4] + "/kill_signal"
+	}
 
 	go changeLogFile()
 	rootData := &fs.LoopbackRoot{

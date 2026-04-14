@@ -68,6 +68,25 @@ pipe directly.
 **3. When malware is detected**, the filesystem writes to the pipe, the watcher
 wakes up, prints a log line, and calls `docker kill <container-name>`.
 
+### Known behaviour: kill signal requires a read after detection
+
+`isMalicious()` is checked — and `signalDetection()` called — only inside the
+`Read` handler, not the `Write` handler. This means:
+
+- The classifier can detect ransomware based purely on write activity (high
+  entropy, write count, file extensions).
+- However, the container kill signal is not sent until the next **read**
+  operation through the FUSE mount after `classifier.log` flips to `true`.
+
+In practice, ransomware reads files before encrypting them, so detection and
+kill happen mid-operation. In write-only workloads (e.g. synthetic tests that
+only overwrite files without reading first), the container will run to
+completion even if the classifier has already flagged it as malicious.
+
+If earlier termination is needed for write-only workloads, one option is to
+also call `isMalicious()` inside the `Write` handler in
+`MA_custom_filesystems/rename_fs/main.go`.
+
 ### Security properties
 
 | Property | Detail |

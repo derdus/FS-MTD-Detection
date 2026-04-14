@@ -5,14 +5,15 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 )
 
 func isMalicious() bool {
-	classifier, err := os.ReadFile("/logs/classifier.log")
+	classifier, err := os.ReadFile(classifierLogPath)
 	if err != nil {
 		fmt.Println(err)
 	}
-	classifierBool, _ := strconv.ParseBool(string(classifier))
+	classifierBool, _ := strconv.ParseBool(strings.TrimSpace(string(classifier)))
 	return classifierBool
 }
 
